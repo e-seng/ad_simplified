@@ -56,6 +56,7 @@ def submit_flag(
             conn.close()
             return True
         except(ConnectionAbortedError):
+            conn.close()
             pass
         except(ConnectionRefusedError):
             if(verbose): print("failed to connect")
