@@ -63,7 +63,67 @@ def submit_flag(
 
 """IF COPYING, END HERE"""
 
+def setup_argparse() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="""
+        push flags to the specified flag submission server. aimed to be used
+        within attack & defense-styled CTFs.
+        """,
+        epilog="""
+        note: http/https compatibility has not been defined in this iteration
+        """,
+    )
+
+    parser.add_argument(
+        "flag",
+        help="""
+        the flag to submit. if using the command-line interface (which you likely
+        are if you're reading this), the argument will be parsed into a utf-8
+        byte-array before being sent to the server. to control this yourself,
+        please use the python function directly
+        """,
+    )
+
+    parser.add_argument(
+        "address",
+        help="""
+        the address to send flags to. this should be specified by the organizers
+        hosting the CTF. (this is in the format of "host:port")
+        """,
+    )
+
+    parser.add_argument(
+        "--quiet", "-q",
+        action="store_true",
+        help="""
+        surpress typical progress output
+        """,
+    )
+
+    parser.add_argument(
+        "--debug", "-d",
+        action="store_true",
+        help="""
+        show debug info
+        """,
+    )
+
+    return parser
+
 def main():
+    parser = setup_argparse()
+    args = parser.parse_args()
+
+    address = args.address.split(":")
+    if(args.debug): print(address)
+
+    submit_flag(
+        bytes(args.flag, "utf-8"),
+        host=address[0],
+        port=int(address[1]),
+        debug=args.debug,
+        verbose=not args.quiet,
+    )
     return
 
 if __name__ == "__main__":
