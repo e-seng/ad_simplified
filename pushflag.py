@@ -53,14 +53,17 @@ def submit_flag(
                 total_sent += bytes_sent
 
             if(verbose): print("done!")
+            conn.close()
             return True
         except(ConnectionAbortedError):
             pass
         except(ConnectionRefusedError):
             if(verbose): print("failed to connect")
+            conn.close()
             return False
 
     if(verbose): print("timed out")
+    conn.close()
     return False
 
 """IF COPYING, END HERE"""
