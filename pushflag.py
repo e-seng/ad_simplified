@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import argparse
-import socket
 
 """IF COPYING, START HERE"""
+import socket
 
 def submit_flag(
         flag: bytes,
