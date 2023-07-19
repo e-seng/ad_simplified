@@ -36,7 +36,7 @@ def submit_flag(
 
     for _ in range(timeout):
         try: # i hate nesting
-            print("[*] attempting to send flag... ", end="")
+            if(verbose): print("[*] attempting to send flag... ", end="")
             conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             conn.connect((host, port))
             total_sent = 0
@@ -52,15 +52,15 @@ def submit_flag(
                     raise ConnectionAbortedError
                 total_sent += bytes_sent
 
-            print("done!")
+            if(verbose): print("done!")
             return True
         except(ConnectionAbortedError):
             pass
         except(ConnectionRefusedError):
-            print("failed to connect")
+            if(verbose): print("failed to connect")
             return False
 
-    print("timed out")
+    if(verbose): print("timed out")
     return False
 
 """IF COPYING, END HERE"""
