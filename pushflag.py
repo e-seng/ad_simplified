@@ -5,10 +5,11 @@ import argparse
 import socket
 
 def submit_flag(
-        flag: bytes,
+        flag: str,
         timeout=5,
         host="localhost",
         port=1337,
+        encoding="utf-8",
         http=False,
         debug=False,
         verbose=True,
@@ -25,6 +26,7 @@ def submit_flag(
                fails
     - host: the host ip address or hostname of the flag submission server.
     - port: the port that the host has open for the flag submission server.
+    - encoding: the encoding to parse the bytes with
     - http: (todo) set to true if the flag submission process is http/https based
 
     this will return a boolean determining whether the flag submission process
@@ -45,7 +47,7 @@ def submit_flag(
                         percent,
                         end="\b"*len(percent),
                     )
-                bytes_sent = conn.send(flag[total_sent:])
+                bytes_sent = conn.send(bytes(flag[total_sent:], encoding))
                 if(not bytes_sent): # ie. if no bytes were sent
                     raise ConnectionAbortedError
                 total_sent += bytes_sent
@@ -118,7 +120,7 @@ def main():
     if(args.debug): print(address)
 
     submit_flag(
-        bytes(args.flag, "utf-8"),
+        args.flag,
         host=address[0],
         port=int(address[1]),
         debug=args.debug,
