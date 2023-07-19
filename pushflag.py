@@ -11,7 +11,7 @@ def submit_flag(
         port=1337,
         http=False,
         debug=False,
-        verbose=False,
+        verbose=True,
     ) -> bool:
     """
     submits the given flag to the specified socket (defaults to localhost:1337).
