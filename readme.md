@@ -55,7 +55,7 @@ is `1337`.
 See help on function for more specific details.
 
 ```py
-``Help on function submit_flag in module __main__:
+Help on function submit_flag in module __main__:
 
 submit_flag(flag: str, host: str, port: int, timeout=5, encoding='utf-8', http=False, debug=False, verbose=True) -> bool
     submits the given flag to the specified socket (defaults to localhost:1337).
@@ -73,7 +73,8 @@ submit_flag(flag: str, host: str, port: int, timeout=5, encoding='utf-8', http=F
     - http: (todo) set to true if the flag submission process is http/https based
     
     this will return a boolean determining whether the flag submission process
-    was successful or not.`
+    was successful or not.
+```
 
 ### Command-line Interface
 
