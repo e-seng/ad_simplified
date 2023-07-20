@@ -6,9 +6,9 @@ import socket
 
 def submit_flag(
         flag: str,
+        host: str,
+        port: int,
         timeout=5,
-        host="localhost",
-        port=1337,
         encoding="utf-8",
         http=False,
         debug=False,
@@ -22,10 +22,10 @@ def submit_flag(
     parameters
     ----------
     - flag: the bytes-string flag to submit.
-    - timeout: the number of times to attempt flag submission if a connection
-               fails
     - host: the host ip address or hostname of the flag submission server.
     - port: the port that the host has open for the flag submission server.
+    - timeout: the number of times to attempt flag submission if a connection
+               fails
     - encoding: the encoding to parse the bytes with
     - http: (todo) set to true if the flag submission process is http/https based
 
@@ -125,8 +125,8 @@ def main():
 
     submit_flag(
         args.flag,
-        host=address[0],
-        port=int(address[1]),
+        address[0],
+        int(address[1]),
         debug=args.debug,
         verbose=not args.quiet,
     )
