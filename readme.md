@@ -43,7 +43,7 @@ server hosted at `222.173.190.239:1337`, the following line can be used.
 
 ```py
 submit_flag(
-    b"FLAG{CTFS_ARE_COOL}",
+    "FLAG{CTFS_ARE_COOL}",
     "222.173.190.239",
     1337,
 )
