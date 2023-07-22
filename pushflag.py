@@ -32,6 +32,7 @@ def submit_flag(
     this will return a boolean determining whether the flag submission process
     was successful or not.
     """
+    flag += '\n'
     flag_len = len(flag)
 
     for _ in range(timeout):
