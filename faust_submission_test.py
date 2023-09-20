@@ -13,6 +13,7 @@ PORT = 31337              # Arbitrary non-privileged port
 s = None
 
 ACTIVE_FLAGS = [ ]
+SUBMITTED_FLAGS = [ ]
 
 # FLAG_RE = re.compile(b"^ctf{[a-zA-Z0-9\(\)\\._'\"!?#$%^&*-]+}$") # general flag
 
@@ -60,10 +61,13 @@ def check_flags(flag_stream, conn):
 
         if(not FLAG_RE.match(flag)): # check against flag format
             conn.send(flag + b" INV\n")
+        elif(flag in SUBMITTED_FLAGS):
+            conn.send(flag + b" DUP\n")
         elif(flag not in ACTIVE_FLAGS): # check for unactive flags
             conn.send(flag + b" OLD\n")
         else:
             conn.send(flag + b" OK\n")
+            SUBMITTED_FLAGS.append(flag)
 
         # expire flags, generate new flags
         expired_flag = ACTIVE_FLAGS.pop(0)

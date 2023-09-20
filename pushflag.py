@@ -63,8 +63,11 @@ def submit_flag(
                 response = conn.recv(1024).split(b'\n')[0]
                 submitted_flag, status = response.split()
 
+            if(bytes(flag.strip(), encoding) == submitted_flag and status == b"DUP"):
+                print("flag already submitted, moving on...")
+                return True
+
             if(bytes(flag.strip(), encoding) != submitted_flag or status != b"OK"):
-                print(bytes(flag, encoding), submitted_flag, status)
                 print("failed :(, trying again")
                 continue
 
