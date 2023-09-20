@@ -3,11 +3,13 @@ import argparse
 
 """IF COPYING, START HERE"""
 import socket
+import select
 
 def submit_flag(
         flag: str,
         host: str,
         port: int,
+        tries=5,
         timeout=5,
         encoding="utf-8",
         http=False,
@@ -24,18 +26,20 @@ def submit_flag(
     - flag: the bytes-string flag to submit.
     - host: the host ip address or hostname of the flag submission server.
     - port: the port that the host has open for the flag submission server.
-    - timeout: the number of times to attempt flag submission if a connection
-               fails
+    - tries: the number of times to attempt flag submission if a connection
+             fails
+    - timeout: the number of seconds to wait for a confirmation from the
+               submission server
     - encoding: the encoding to parse the bytes with
     - http: (todo) set to true if the flag submission process is http/https based
 
     this will return a boolean determining whether the flag submission process
     was successful or not.
     """
-    flag += '\n'
+    flag += '\n\n'
     flag_len = len(flag)
 
-    for _ in range(timeout):
+    for _ in range(tries):
         try: # i hate nesting
             if(verbose): print("[*] attempting to send flag... ", end="")
             conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -52,6 +56,17 @@ def submit_flag(
                 if(not bytes_sent): # ie. if no bytes were sent
                     raise ConnectionAbortedError
                 total_sent += bytes_sent
+
+            # check for flag status. if nothing is returned, that's not good
+            submitted_flag = status = ""
+            if(select.select([conn], [], [], timeout)):
+                response = conn.recv(1024).split(b'\n')[0]
+                submitted_flag, status = response.split()
+
+            if(bytes(flag.strip(), encoding) != submitted_flag or status != b"OK"):
+                print(bytes(flag, encoding), submitted_flag, status)
+                print("failed :(, trying again")
+                continue
 
             if(verbose): print("done!")
             conn.close()
