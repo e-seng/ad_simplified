@@ -64,11 +64,11 @@ def submit_flag(
                 submitted_flag, status = response.split()
 
             if(bytes(flag.strip(), encoding) == submitted_flag and status == b"DUP"):
-                print("flag already submitted, moving on...")
+                if(verbose): print("flag already submitted, moving on...")
                 return True
 
             if(bytes(flag.strip(), encoding) != submitted_flag or status != b"OK"):
-                print("failed :(, trying again")
+                if(verbose): print("failed :(, trying again")
                 continue
 
             if(verbose): print("done!")
