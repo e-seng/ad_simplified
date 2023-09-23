@@ -82,7 +82,7 @@ def submit_flag(
                 return True
 
             if(bytes(flag.strip(), encoding) != submitted_flag or status != b"OK"):
-                if(verbose): print("failed :(, trying again")
+                if(verbose): print("failed :( - reason:", ''.join(flag_stats[1:]))
                 continue
 
             if(verbose): print("done!")
