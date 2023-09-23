@@ -69,7 +69,10 @@ def submit_flag(
             submitted_flag = status = ""
             if(select.select([conn], [], [], timeout)):
                 response = conn.recv(1024).split(b'\n')[0]
-                submitted_flag, status = response.split()
+                flag_stats = response.split()
+                submitted_flag = flag_stats[0]
+                status = flag_stats[1]
+
 
             if(bytes(flag.strip(), encoding) == submitted_flag and status == b"DUP"):
                 if(verbose): print("flag already submitted, moving on...")
