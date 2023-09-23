@@ -49,11 +49,14 @@ def submit_flag(
             protocol = socket.AF_INET6 if ipv6 else socket.AF_INET
             conn = socket.socket(protocol, socket.SOCK_STREAM)
             conn.connect((host, port))
+
+            dump_lines = banner_size
+            while(dump_lines): # readout banner
+                response = conn.recv(1024)
+                dump_lines -= response.count(b'\n')
+
             total_sent = 0
             while(total_sent < flag_len):
-                while(banner_size): # readout banner
-                    response = conn.recv(1024)
-                    banner_size -= response.count(b'\n')
                 if(verbose):
                     percent = str(total_sent / flag_len * 100)[:5] + "%"
                     print(
