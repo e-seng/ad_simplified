@@ -11,6 +11,7 @@ def submit_flag(
         port: int,
         tries=5,
         timeout=5,
+        ipv6=False,
         encoding="utf-8",
         http=False,
         debug=False,
@@ -30,6 +31,7 @@ def submit_flag(
              fails
     - timeout: the number of seconds to wait for a confirmation from the
                submission server
+    - ipv6: specify whether the flag submission server is using ipv6 over ipv4
     - encoding: the encoding to parse the bytes with
     - http: (todo) set to true if the flag submission process is http/https based
 
@@ -42,7 +44,8 @@ def submit_flag(
     for _ in range(tries):
         try: # i hate nesting
             if(verbose): print("[*] attempting to send flag... ", end="")
-            conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            protocol = socket.AF_INET6 if ipv6 else socket.AF_INET
+            conn = socket.socket(protocol, socket.SOCK_STREAM)
             conn.connect((host, port))
             total_sent = 0
             while(total_sent < flag_len):
