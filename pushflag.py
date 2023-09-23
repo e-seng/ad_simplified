@@ -13,6 +13,7 @@ def submit_flag(
         timeout=5,
         ipv6=False,
         encoding="utf-8",
+        banner_size=0,
         http=False,
         debug=False,
         verbose=True,
@@ -31,6 +32,7 @@ def submit_flag(
              fails
     - timeout: the number of seconds to wait for a confirmation from the
                submission server
+    - banner_size: the number of newlines within the flag submission server
     - ipv6: specify whether the flag submission server is using ipv6 over ipv4
     - encoding: the encoding to parse the bytes with
     - http: (todo) set to true if the flag submission process is http/https based
@@ -49,6 +51,9 @@ def submit_flag(
             conn.connect((host, port))
             total_sent = 0
             while(total_sent < flag_len):
+                while(banner_size): # readout banner
+                    response = conn.recv(1024)
+                    banner_size -= response.count(b'\n')
                 if(verbose):
                     percent = str(total_sent / flag_len * 100)[:5] + "%"
                     print(
