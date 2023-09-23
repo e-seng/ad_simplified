@@ -36,33 +36,55 @@ def run_on_teams(exploit: "function(host: str, port: int, data: str)",
     if(verbose): print("done!")
     if(debug): print(f"[?] team_info = {team_info}")
 
-    for team_id in team_info["teams"]: # get each team
-        team_id = str(team_id) # json and things use strings, properly convert
-        if(team_id == exploiter_team_id): continue # do not exploit self
+    while(True):
+        start_time = int(time.time())
 
-        # generate the host to exploit, unless the team id is the team host
-        host = (team_id_format.replace("<team-number>", team_id)
-            if team_id_format is not None else team_id)
-        if team_id not in team_info["flag_ids"][challenge_name].keys():
-            if(debug): print(f"[!] could not find flag info for team {team_id}."\
-                "skipping...")
+        if(verbose): print("[*] exploiting this tick")
+        for team_id in team_info["teams"]: # get each team
+            team_id = str(team_id) # json and things use strings, properly convert
+            if(team_id == exploiter_team_id): continue # do not exploit self
+
+            # generate the host to exploit, unless the team id is the team host
+            host = (team_id_format.replace("<team-number>", team_id)
+                if team_id_format is not None else team_id)
+            if team_id not in team_info["flag_ids"][challenge_name].keys():
+                if(debug): print(f"[!] could not find flag info for team {team_id}."\
+                    "skipping...")
+                continue
+
+            for tick, data in enumerate(
+                    team_info["flag_ids"][challenge_name][team_id]):
+                # properly format the team_id address
+                if team_id_format is not None:
+                    team_id = team_id_format.replace("<team-number>", team_id)
+                try:
+                    exploit(host, challenge_port, data)
+                except Exception as e:
+                    if(not verbose): continue
+                    print(f"[!] exploit failed! please see the following"\
+                          " traceback")
+                    print(traceback.format_exc())
+            # nop team is typically at the top of the list of teams.json
+            if(nop_only): break
+        if(verbose): print(f"[*] finished exploitation for this tick")
+
+        # wait for next tick
+        time_elapsed = int(time.time()) - start_time # sync with clock
+        if(not verbose):
+            sleep(tick_duration - time_elapsed)
             continue
 
-        for tick, data in enumerate(
-                team_info["flag_ids"][challenge_name][team_id]):
-            # properly format the team_id address
-            if team_id_format is not None:
-                team_id = team_id_format.replace("<team-number>", team_id)
-            try:
-                exploit(host, challenge_port, data)
-            except Exception as e:
-                if(not verbose): continue
-                print(f"[!] exploit failed! please see the following"\
-                      " traceback")
-                print(traceback.format_exc())
-        # nop team is typically at the top of the list of teams.json
-        if(nop_only): break
-
+        print("[*] sleeping for ", end="")
+        for _ in range(tick_duration - time_elapsed):
+            minutes = (tick_duration - time_elapsed) // 60 # seconds in a minute
+            seconds = (tick_duration - time_elapsed) % 60 # seconds in a minute
+            countdown = f"{minutes:02}:{seconds:02}"
+            sys.stdout.write(countdown)
+            sys.stdout.flush()
+            time.sleep(1) # countdown each second
+            sys.stdout.write('\b'*(len(countdown)))
+            time_elapsed = int(time.time()) - start_time # update elapsed time
+        print("done!")
     return
 
 ### END COPYING HERE ###
