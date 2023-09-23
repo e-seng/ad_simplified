@@ -7,5 +7,5 @@ These are quick and dirty python script made to aid when playing Attack-Defense
 CTFs like FAUST or SAAR.
 
 ## packages
-- [pushflag](./pushflag/readme.md) - a connector to submit flags
-- [exploittoss](./exploittoss/readme.md) - an exploit runner
+- [pushflag](./documentation/pushflag.md) - a connector to submit flags
+- [exploittoss](./documentation/exploittoss.md) - an exploit runner
