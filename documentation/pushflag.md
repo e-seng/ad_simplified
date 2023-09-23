@@ -22,14 +22,14 @@ To integrate this into a solve script, this repository should be saved to the
 same file directory as the solve script.
 
 ```sh
-git clone https://github.com/e-seng/pushflag.git
+git clone https://github.com/e-seng/ad_simplified.git
 ```
 
 Afterwards, the function to use, `submit_flag(...)`, can be made accessible via
 the following line.
 
 ```py
-from pushflag.pushflag import submit_flag
+from ad_simplified.pushflag import submit_flag
 ```
 
 > Alternatively, the code can just be copied into a solve script... I will
