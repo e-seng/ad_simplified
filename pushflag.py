@@ -6,17 +6,12 @@ import socket
 import select
 import requests
 
-submission_methods = {
-        "tcp": tcp_submitter,
-        "http": http_submitter,
-    }
-
 def tcp_submitter(flag: str,
-                  host: str=localhost,
+                  host: str="localhost",
                   port: int=1337,
+                  kwargs: dict[str, object]={},
                   debug=False,
                   verbose=True,
-                  **kwargs
     ) -> bool:
     """
     submits the given flag to the specified socket (defaults to localhost:1337).
@@ -31,8 +26,10 @@ def tcp_submitter(flag: str,
     -----------------
     - encoding: the encoding to parse the bytes with (default: utf-8)
 
-    this will return a boolean determining whether there should be any
-    additional requests should be made, True indicates that there should not be
+    this will return two booleans:
+    - the first determines whether there should be any additional requests
+      should be made, True indicates that there should not be
+    - the second determines whether the flag was successfully submitted
     """
     flag += '\n\n'
     flag_len = len(flag)
@@ -63,29 +60,29 @@ def tcp_submitter(flag: str,
 
         if(bytes(flag.strip(), encoding) == submitted_flag and status == b"DUP"):
             if(verbose): print("flag already submitted, moving on...")
-            return True
+            return True, False
 
         if(bytes(flag.strip(), encoding) != submitted_flag or status != b"OK"):
             if(verbose): print("failed :(, trying again")
-            return False
+            return False, False
 
         if(verbose): print("done!")
         conn.close()
-        return True
+        return True, True
     except(ConnectionAbortedError):
         conn.close()
         pass
     except(ConnectionRefusedError):
         if(verbose): print("failed to connect")
         conn.close()
-        return False
+        return False, False
 
 def http_submitter(flag: str,
-                   host: str=localhost,
+                   host: str="localhost",
                    port: int=80,
+                  kwargs: dict[str, object]={},
                    debug=False,
                    verbose=True,
-                   **kwargs
     ) -> bool:
     """
     submits the given flag to the specified socket (defaults to http://localhost).
@@ -104,8 +101,10 @@ def http_submitter(flag: str,
     - secure: whether the service is using https. will automatically set to true
       if port 443 is being used (default: False)
 
-    this will return a boolean determining whether there should be any
-    additional requests should be made, True indicates that there should not be
+    this will return two booleans:
+    - the first determines whether there should be any additional requests
+      should be made, True indicates that there should not be
+    - the second determines whether the flag was successfully submitted
     """
     if("endpoint" not in kwargs.keys()):
         raise KeyError("specifying endpoint to submit keys is required")
@@ -128,43 +127,45 @@ def http_submitter(flag: str,
             if(verbose):
                 print("something is going wrong with the request")
                 print("    likely malformed but trying again")
-            return False
+            return False, False
 
         if(status["status"] == "STATUS_ACCEPTED"):
             if(verbose): print("done!")
-            return True
+            return True, True
 
         if(status["status"] == "STATUS_WRONG"):
             if(verbose): print("flag is incorrect :(")
-            return True
+            return True, False
 
         if(status["status"] == "STATUS_DUPLICATED"):
             if(verbose): print("flag is duplicated, moving on")
-            return True
+            return True, False
 
         if(status["status"] == "STATUS_EXPIRED"):
             if(verbose): print("flag is expired, moving on")
-            return True
+            return True, False
 
         if(status["status"] == "STATUS_OWNFLAG"):
             if(verbose): print("flag is our own, moving on")
-            return True
-
-        if(status["status"] == "STATUS_OWNFLAG"):
-            if(verbose): print("flag is our own, moving on")
-            return True
+            return True, False
 
         if(status["status"] == "STATUS_ERROR"):
             if(verbose): print("server internal failure, trying again")
-            return False
+            return False, False
 
         if(verbose): print("unknown issue :(, trying again")
-        return False
-
+        return False, False
     except(ConnectionError):
         if(verbose): print("failed to connect")
-        return False
+        return False, False
+    except(requests.exceptions.JSONDecodeError):
+        if(verbose): print("failed to parse JSON")
+        return True, False
 
+submission_methods = {
+        "tcp": tcp_submitter,
+        "http": http_submitter,
+    }
 
 def submit_flag(
         method: str,
@@ -200,18 +201,22 @@ def submit_flag(
     flag += '\n\n'
     flag_len = len(flag)
 
+    if(method not in submission_methods.keys()):
+        raise KeyError(f"method must be one of {submission_methods.keys()}")
+
     attempt_submit = submission_methods[method]
 
     for _ in range(tries):
         if(verbose): print("[*] attempting to send flag... ", end="")
         # attempt submissions until the checker accepts it
-        if(attempt_submit(flag,
-                          host,
-                          port,
-                          encoding=encoding,
-                          verbose=verbose,
-                          debug=debug)):
-            return True
+        status = attempt_submit(flag,
+                                host,
+                                port,
+                                kwargs,
+                                verbose=verbose,
+                                debug=debug))
+        if(status[0]): # needs to repeat?
+            return status[1] # successfully submitted?
 
     if(verbose): print(f"failed after {tries} tries D:")
     conn.close()
