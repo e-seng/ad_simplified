@@ -4,41 +4,42 @@ import argparse
 """IF COPYING, START HERE"""
 import socket
 import select
+import requests
 
 submission_methods = {
         "tcp": tcp_submitter,
+        "http": http_submitter,
     }
 
 def tcp_submitter(flag: str,
-                  host: str,
-                  port: int,
-                  encoding="utf-8",
+                  host: str=localhost,
+                  port: int=1337,
                   debug=False,
                   verbose=True,
+                  **kwargs
     ) -> bool:
     """
     submits the given flag to the specified socket (defaults to localhost:1337).
-    todo: if the flag submission socket is an http/https endpoint, this will be
-          handled differently
 
     parameters
     ----------
     - flag: the bytes-string flag to submit.
     - host: the host ip address or hostname of the flag submission server.
     - port: the port that the host has open for the flag submission server.
-    - tries: the number of times to attempt flag submission if a connection
-             fails
-    - timeout: the number of seconds to wait for a confirmation from the
-               submission server
-    - encoding: the encoding to parse the bytes with
-    - http: (todo) set to true if the flag submission process is http/https based
 
-    this will return a boolean determining whether the flag submission process
-    was successful or not.
+    keyword arguments
+    -----------------
+    - encoding: the encoding to parse the bytes with (default: utf-8)
+
+    this will return a boolean determining whether there should be any
+    additional requests should be made, True indicates that there should not be
     """
     flag += '\n\n'
     flag_len = len(flag)
-    try: # i hate nesting
+
+    encoding = kwargs["encoding"] if "encoding" in kwargs.keys() else "utf-8"
+
+    try:
         conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         conn.connect((host, port))
         total_sent = 0
@@ -66,7 +67,7 @@ def tcp_submitter(flag: str,
 
         if(bytes(flag.strip(), encoding) != submitted_flag or status != b"OK"):
             if(verbose): print("failed :(, trying again")
-            continue
+            return False
 
         if(verbose): print("done!")
         conn.close()
@@ -79,16 +80,102 @@ def tcp_submitter(flag: str,
         conn.close()
         return False
 
+def http_submitter(flag: str,
+                   host: str=localhost,
+                   port: int=80,
+                   debug=False,
+                   verbose=True,
+                   **kwargs
+    ) -> bool:
+    """
+    submits the given flag to the specified socket (defaults to http://localhost).
+
+    parameters
+    ----------
+    - flag: the bytes-string flag to submit.
+    - host: the host ip address or hostname of the flag submission server.
+    - port: the port that the host has open for the flag submission server.
+    - encoding: the encoding to parse the bytes with
+
+    keyword arguments
+    -----------------
+    - endpoint: the path to the flag submission endpoint, required
+    - api_key: the api key to acess the service (default: None)
+    - secure: whether the service is using https. will automatically set to true
+      if port 443 is being used (default: False)
+
+    this will return a boolean determining whether there should be any
+    additional requests should be made, True indicates that there should not be
+    """
+    if("endpoint" not in kwargs.keys()):
+        raise KeyError("specifying endpoint to submit keys is required")
+
+    endpoint = kwargs["endpoint"]
+
+    secure = port == 443
+    secure = kwargs["secure"] if "secure" in kwargs.keys() else False
+    headers = {}
+    if("api_key" in kwargs.keys()): headers["authorization"] = f"Bearer {kwargs[api_key]}"
+
+    method_schema = "https" if secure else "http"
+
+    try:
+        resp = requests.post(f"{method_schema}://{host}:{port}/{endpoint}",
+                             data={"flags": [flag]})
+        status = resp.json()[0] # only submitting one flag at a time
+
+        if(not status["valid"]):
+            if(verbose):
+                print("something is going wrong with the request"
+                print("    likely malformed but trying again")
+            return False
+
+        if(status["status"] == "STATUS_ACCEPTED"):
+            if(verbose): print("done!")
+            return True
+
+        if(status["status"] == "STATUS_WRONG"):
+            if(verbose): print("flag is incorrect :(")
+            return True
+
+        if(status["status"] == "STATUS_DUPLICATED"):
+            if(verbose): print("flag is duplicated, moving on")
+            return True
+
+        if(status["status"] == "STATUS_EXPIRED"):
+            if(verbose): print("flag is expired, moving on")
+            return True
+
+        if(status["status"] == "STATUS_OWNFLAG"):
+            if(verbose): print("flag is our own, moving on")
+            return True
+
+        if(status["status"] == "STATUS_OWNFLAG"):
+            if(verbose): print("flag is our own, moving on")
+            return True
+
+        if(status["status"] == "STATUS_ERROR"):
+            if(verbose): print("server internal failure, trying again")
+            return False
+
+        if(verbose): print("unknown issue :(, trying again")
+        return False
+
+    except(ConnectionError):
+        if(verbose): print("failed to connect")
+        return False
+
+
 def submit_flag(
+        method: str,
         flag: str,
         host: str,
         port: int,
         tries=5,
         timeout=5,
-        encoding="utf-8",
-        http=False,
         debug=False,
         verbose=True,
+        **kwargs,
     ) -> bool:
     """
     submits the given flag to the specified socket (defaults to localhost:1337).
