@@ -10,6 +10,7 @@ def tcp_submitter(flag: str,
                   host: str="localhost",
                   port: int=1337,
                   kwargs: dict[str, object]={},
+                  timeout: int=5,
                   debug=False,
                   verbose=True,
     ) -> bool:
@@ -21,6 +22,7 @@ def tcp_submitter(flag: str,
     - flag: the bytes-string flag to submit.
     - host: the host ip address or hostname of the flag submission server.
     - port: the port that the host has open for the flag submission server.
+    - timeout: the number of seconds to wait if the server hangs
 
     keyword arguments
     -----------------
@@ -80,7 +82,8 @@ def tcp_submitter(flag: str,
 def http_submitter(flag: str,
                    host: str="localhost",
                    port: int=80,
-                  kwargs: dict[str, object]={},
+                   kwargs: dict[str, object]={},
+                   timeout: int=5,
                    debug=False,
                    verbose=True,
     ) -> bool:
@@ -92,7 +95,7 @@ def http_submitter(flag: str,
     - flag: the bytes-string flag to submit.
     - host: the host ip address or hostname of the flag submission server.
     - port: the port that the host has open for the flag submission server.
-    - encoding: the encoding to parse the bytes with
+    - timeout: the number of seconds to wait if the server hangs
 
     keyword arguments
     -----------------
@@ -120,7 +123,8 @@ def http_submitter(flag: str,
 
     try:
         resp = requests.post(f"{method_schema}://{host}:{port}/{endpoint}",
-                             data={"flags": [flag]})
+                             json={"flags": [flag]},
+                             timeout=timeout,)
         status = resp.json()["submitFlagResults"][0] # only submitting one flag at a time
 
         if(not status["valid"]):
@@ -210,6 +214,7 @@ def submit_flag(
                                 host,
                                 port,
                                 kwargs,
+                                timeout=timeout,
                                 verbose=verbose,
                                 debug=debug)
         if(status[0]): # needs to repeat?
