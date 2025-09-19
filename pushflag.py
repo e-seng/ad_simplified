@@ -5,16 +5,16 @@ import argparse
 import socket
 import select
 
-def submit_flag(
-        flag: str,
-        host: str,
-        port: int,
-        tries=5,
-        timeout=5,
-        encoding="utf-8",
-        http=False,
-        debug=False,
-        verbose=True,
+submission_methods = {
+        "tcp": tcp_submitter,
+    }
+
+def tcp_submitter(flag: str,
+                  host: str,
+                  port: int,
+                  encoding="utf-8",
+                  debug=False,
+                  verbose=True,
     ) -> bool:
     """
     submits the given flag to the specified socket (defaults to localhost:1337).
@@ -38,51 +38,95 @@ def submit_flag(
     """
     flag += '\n\n'
     flag_len = len(flag)
+    try: # i hate nesting
+        conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        conn.connect((host, port))
+        total_sent = 0
+        while(total_sent < flag_len):
+            if(verbose):
+                percent = str(total_sent / flag_len * 100)[:5] + "%"
+                print(
+                    percent,
+                    end="\b"*len(percent),
+                )
+            bytes_sent = conn.send(bytes(flag[total_sent:], encoding))
+            if(not bytes_sent): # ie. if no bytes were sent
+                raise ConnectionAbortedError
+            total_sent += bytes_sent
+
+        # check for flag status. if nothing is returned, that's not good
+        submitted_flag = status = ""
+        if(select.select([conn], [], [], timeout)):
+            response = conn.recv(1024).split(b'\n')[0]
+            submitted_flag, status = response.split()
+
+        if(bytes(flag.strip(), encoding) == submitted_flag and status == b"DUP"):
+            if(verbose): print("flag already submitted, moving on...")
+            return True
+
+        if(bytes(flag.strip(), encoding) != submitted_flag or status != b"OK"):
+            if(verbose): print("failed :(, trying again")
+            continue
+
+        if(verbose): print("done!")
+        conn.close()
+        return True
+    except(ConnectionAbortedError):
+        conn.close()
+        pass
+    except(ConnectionRefusedError):
+        if(verbose): print("failed to connect")
+        conn.close()
+        return False
+
+def submit_flag(
+        flag: str,
+        host: str,
+        port: int,
+        tries=5,
+        timeout=5,
+        encoding="utf-8",
+        http=False,
+        debug=False,
+        verbose=True,
+    ) -> bool:
+    """
+    submits the given flag to the specified socket (defaults to localhost:1337).
+    todo: if the flag submission socket is an http/https endpoint, this will be
+          handled differently
+
+    parameters
+    ----------
+    - method: the method to submit flags by (specifed in submission_methods)
+    - flag: the bytes-string flag to submit.
+    - host: the host ip address or hostname of the flag submission server.
+    - port: the port that the host has open for the flag submission server.
+    - tries: the number of times to attempt flag submission if a connection
+             fails
+    - timeout: the number of seconds to wait for a confirmation from the
+               submission server
+    - encoding: the encoding to parse the bytes with
+
+    this will return a boolean determining whether the flag submission process
+    was successful or not.
+    """
+    flag += '\n\n'
+    flag_len = len(flag)
+
+    attempt_submit = submission_methods[method]
 
     for _ in range(tries):
-        try: # i hate nesting
-            if(verbose): print("[*] attempting to send flag... ", end="")
-            conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            conn.connect((host, port))
-            total_sent = 0
-            while(total_sent < flag_len):
-                if(verbose):
-                    percent = str(total_sent / flag_len * 100)[:5] + "%"
-                    print(
-                        percent,
-                        end="\b"*len(percent),
-                    )
-                bytes_sent = conn.send(bytes(flag[total_sent:], encoding))
-                if(not bytes_sent): # ie. if no bytes were sent
-                    raise ConnectionAbortedError
-                total_sent += bytes_sent
-
-            # check for flag status. if nothing is returned, that's not good
-            submitted_flag = status = ""
-            if(select.select([conn], [], [], timeout)):
-                response = conn.recv(1024).split(b'\n')[0]
-                submitted_flag, status = response.split()
-
-            if(bytes(flag.strip(), encoding) == submitted_flag and status == b"DUP"):
-                if(verbose): print("flag already submitted, moving on...")
-                return True
-
-            if(bytes(flag.strip(), encoding) != submitted_flag or status != b"OK"):
-                if(verbose): print("failed :(, trying again")
-                continue
-
-            if(verbose): print("done!")
-            conn.close()
+        if(verbose): print("[*] attempting to send flag... ", end="")
+        # attempt submissions until the checker accepts it
+        if(attempt_submit(flag,
+                          host,
+                          port,
+                          encoding=encoding,
+                          verbose=verbose,
+                          debug=debug)):
             return True
-        except(ConnectionAbortedError):
-            conn.close()
-            pass
-        except(ConnectionRefusedError):
-            if(verbose): print("failed to connect")
-            conn.close()
-            return False
 
-    if(verbose): print("timed out")
+    if(verbose): print(f"failed after {tries} tries D:")
     conn.close()
     return False
 
