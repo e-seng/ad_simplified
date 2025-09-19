@@ -198,9 +198,6 @@ def submit_flag(
     this will return a boolean determining whether the flag submission process
     was successful or not.
     """
-    flag += '\n\n'
-    flag_len = len(flag)
-
     if(method not in submission_methods.keys()):
         raise KeyError(f"method must be one of {submission_methods.keys()}")
 
