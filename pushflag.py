@@ -218,8 +218,7 @@ def submit_flag(
         if(status[0]): # needs to repeat?
             return status[1] # successfully submitted?
 
-    if(verbose): print(f"failed after {tries} tries D:")
-    conn.close()
+    if(verbose): print(f"[-] failed after {tries} tries D:")
     return False
 
 """IF COPYING, END HERE"""
