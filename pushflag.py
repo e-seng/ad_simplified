@@ -214,7 +214,7 @@ def submit_flag(
                                 port,
                                 kwargs,
                                 verbose=verbose,
-                                debug=debug))
+                                debug=debug)
         if(status[0]): # needs to repeat?
             return status[1] # successfully submitted?
 
