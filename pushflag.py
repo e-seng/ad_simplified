@@ -121,7 +121,7 @@ def http_submitter(flag: str,
     try:
         resp = requests.post(f"{method_schema}://{host}:{port}/{endpoint}",
                              data={"flags": [flag]})
-        status = resp.json()[0] # only submitting one flag at a time
+        status = resp.json()["submitFlagResults"][0] # only submitting one flag at a time
 
         if(not status["valid"]):
             if(verbose):
