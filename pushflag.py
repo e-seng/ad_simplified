@@ -126,7 +126,7 @@ def http_submitter(flag: str,
 
         if(not status["valid"]):
             if(verbose):
-                print("something is going wrong with the request"
+                print("something is going wrong with the request")
                 print("    likely malformed but trying again")
             return False
 
