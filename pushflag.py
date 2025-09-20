@@ -114,24 +114,21 @@ def http_submitter(flag: str,
 
     endpoint = kwargs["endpoint"]
 
-    secure = port == 443
     secure = kwargs["secure"] if "secure" in kwargs.keys() else False
+    secure = port == 443
     headers = {}
-    if("api_key" in kwargs.keys()): headers["authorization"] = f"Bearer {kwargs[api_key]}"
+    if("api_key" in kwargs.keys()): headers["Authorization"] = f"Bearer {kwargs['api_key']}"
 
     method_schema = "https" if secure else "http"
 
     try:
         resp = requests.post(f"{method_schema}://{host}:{port}/{endpoint}",
                              json={"flags": [flag]},
-                             timeout=timeout,)
+                             timeout=timeout,
+                             verify=False,
+                             headers=headers)
+        if(debug): print(resp.text)
         status = resp.json()["submitFlagResults"][0] # only submitting one flag at a time
-
-        if(not status["valid"]):
-            if(verbose):
-                print("something is going wrong with the request")
-                print("    likely malformed but trying again")
-            return False, False
 
         if(status["status"] == "STATUS_ACCEPTED"):
             if(verbose): print("done!")
@@ -164,6 +161,7 @@ def http_submitter(flag: str,
         return False, False
     except(requests.exceptions.JSONDecodeError):
         if(verbose): print("failed to parse JSON")
+        if(debug): print(resp.text)
         return True, False
 
 submission_methods = {
